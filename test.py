@@ -1,7 +1,9 @@
 import unittest
 from unittest.mock import patch, PropertyMock, Mock, call
 
-from foo import Foo, some_func
+import break_on
+from break_on import MyPropertyMock
+from foo import Foo
 
 
 class MyTestCase(unittest.TestCase):
@@ -68,31 +70,12 @@ class MyTestCase(unittest.TestCase):
         # and accessing it will call the original property's __get__.
         # So I'm just writing a wrapper around __get__ and __set__.
 
-        # original_property: property = Foo.my_prop
-        # def get(obj):
-        #     return original_property.__get__(obj, type(obj))
-        # def set(obj, value):
-        #     breakpoint()
-        #     return original_property.__set__(obj, value)
-        # mocked_property = property(fget=get, fset=set)
-
-        class MyPropertyMock(property):
-            def __init__(property_self, owner, prop_name):
-                assert isinstance(owner, type), "“owner” argument must be a type"
-                property_self.__orig_prop = getattr(owner, prop_name)
-            def __get__(property_self, instance, owner):
-                return property_self.__orig_prop.__get__(instance, owner)
-            def __set__(property_self, instance, value):
-                breakpoint()
-                return property_self.__orig_prop.__set__(instance, value)
-
         self.assertIsInstance(Foo.my_prop, property)
 
         # TODO is this affected by the patch?
         original_foo = Foo()
 
-        # TODO make a context manager for this?
-        with patch.object(Foo, 'my_prop', new=MyPropertyMock(Foo, 'my_prop')):
+        with break_on.write_property(Foo, 'my_prop'):
             self.assertIsInstance(Foo.my_prop, property)
 
             foo = Foo()
@@ -106,7 +89,12 @@ class MyTestCase(unittest.TestCase):
                 'preserved outside the patch context'
         )
 
+    def test_mock_attribute_write(self):
+        raise NotImplementedError
+
     def test_mock_either(self):
+        raise NotImplementedError
+
         def is_attribute(obj, name):
             """Return True iff name is an attribute of obj"""
             return name in obj.__dict__
