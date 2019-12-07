@@ -75,7 +75,7 @@ class MyTestCase(unittest.TestCase):
         # TODO is this affected by the patch?
         original_foo = Foo()
 
-        with break_on.write_property(Foo, 'my_prop'):
+        with break_on.set_property(Foo, 'my_prop'):
             self.assertIsInstance(Foo.my_prop, property)
 
             foo = Foo()

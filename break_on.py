@@ -17,7 +17,7 @@ class MyPropertyMock(property):
 
 
 @contextmanager
-def write_property(cls, prop_name):
+def set_property(cls, prop_name):
     mocked_property = MyPropertyMock(cls, prop_name)
     with patch.object(cls, prop_name, new=mocked_property):
         yield mocked_property
