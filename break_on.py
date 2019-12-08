@@ -20,8 +20,8 @@ _BREAK_ON_OPTIONS = Union[
 class MyPropertyMock(property):
     def __init__(
         self,
-        owner,
-        prop_name,
+        owner: type,
+        prop_name: str,
         hook_get: Callable[[Any, type], None] = lambda instance, owner: None,
         hook_set: Callable[[Any, Any], None] = lambda instance, value: None,
         hook_del: Callable[[Any], None] = lambda instance: None,
@@ -49,7 +49,11 @@ class MyPropertyMock(property):
 
 @contextmanager
 def set_property(cls: type, prop_name: str, hook=breakpoint):
-    assert isinstance(cls, type), "“cls” argument must be a type"
     mocked_property = MyPropertyMock(cls, prop_name, hook_set=hook)
     with patch.object(cls, prop_name, new=mocked_property):
         yield mocked_property
+
+
+@contextmanager
+def set_attribute(cls: type, prop_name: str, hook=breakpoint):
+    yield None

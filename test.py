@@ -82,7 +82,8 @@ class MyTestCase(unittest.TestCase):
             foo = Foo()
             foo.my_prop = 4
             self.assertEqual(foo.my_prop, 4)
-            mock.assert_called_once_with(foo, 4)
+
+        mock.assert_called_once_with(foo, 4)
 
         self.assertEqual(
             foo.my_prop,
@@ -91,17 +92,35 @@ class MyTestCase(unittest.TestCase):
                 'preserved outside the patch context'
         )
 
-    def test_mock_attribute_write(self):
+    def test_mock_instance_attribute_write(self):
         original_foo = Foo()
-        self.assertIsIn('my_attr', original_foo.__dict__)
+        self.assertIn(
+            'my_attr',
+            Foo.__dict__,
+            'attribute is in the original class’s dictionary')
+        self.assertNotIn(
+            'my_attr',
+            original_foo.__dict__,
+            'attribute is not yet in the instance dictionary')
+        original_foo.my_attr = 0
+        self.assertIn(
+            'my_attr',
+            original_foo.__dict__,
+            'attribute is now in the instance dictionary')
         original_attr_value = original_foo.my_attr
+        mock = Mock()
 
-        with break_on.set_attribute(Foo, 'my_attr'):
+        with break_on.set_attribute(Foo, 'my_attr', hook=mock):
             foo = Foo()
-            self.assertIn('my_attr', foo.__dict__)
+            self.assertIn(
+                'my_attr',
+                foo.__dict__,
+                'Mocked attribute behaves as the original')
             self.assertEqual(original_attr_value, foo.my_attr)
             foo.my_attr = 3
             self.assertEqual(3, foo.my_attr)
+
+        mock.assert_called_once_with(foo, 3)
 
     def test_cannot_patch_frozen_attribute(self):
         NT = namedtuple('NT', ('a', 'b'))
