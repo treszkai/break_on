@@ -1,4 +1,5 @@
 import unittest
+from collections import namedtuple
 from unittest.mock import patch, PropertyMock, Mock, call
 
 import break_on
@@ -75,11 +76,13 @@ class MyTestCase(unittest.TestCase):
         # TODO is this affected by the patch?
         original_foo = Foo()
 
-        with break_on.set_property(Foo, 'my_prop'):
+        mock = Mock()
+        with break_on.set_property(Foo, 'my_prop', hook=mock):
             self.assertIsInstance(Foo.my_prop, property)
             foo = Foo()
             foo.my_prop = 4
             self.assertEqual(foo.my_prop, 4)
+            mock.assert_called_once_with(foo, 4)
 
         self.assertEqual(
             foo.my_prop,
@@ -89,7 +92,33 @@ class MyTestCase(unittest.TestCase):
         )
 
     def test_mock_attribute_write(self):
-        raise NotImplementedError
+        original_foo = Foo()
+        self.assertIsIn('my_attr', original_foo.__dict__)
+        original_attr_value = original_foo.my_attr
+
+        with break_on.set_attribute(Foo, 'my_attr'):
+            foo = Foo()
+            self.assertIn('my_attr', foo.__dict__)
+            self.assertEqual(original_attr_value, foo.my_attr)
+            foo.my_attr = 3
+            self.assertEqual(3, foo.my_attr)
+
+    def test_cannot_patch_frozen_attribute(self):
+        NT = namedtuple('NT', ('a', 'b'))
+        nt = NT(3, 4)
+        with self.assertRaises(
+                AttributeError,
+                'mock.patch can’t mock a frozen attribute either'
+        ):
+            with patch.object(nt, "a"):
+                pass
+
+        with self.assertRaises(
+                AttributeError,
+                'mock.patch can’t mock a non-existent attribute of a frozen class'
+        ):
+            with patch.object(nt, "x"):
+                pass
 
     def test_mock_either(self):
         raise NotImplementedError
