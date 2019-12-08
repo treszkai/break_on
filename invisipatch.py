@@ -86,7 +86,7 @@ def is_property(cls: type, name: str):
 
 
 @contextmanager
-def set(
+def setattr(
     cls: type,
     name: str,
     hook: Optional[Callable[[Any, Any], None]] = None
@@ -100,7 +100,7 @@ def set(
         Default: a new Mock instance.
     :return: A runtime context
     """
-    # TODO should I care that this set shadows the built-in name set?
+    # TODO should I care that this set shadows the built-in name setattr?
 
     if hook is None:
         hook = Mock()

@@ -2,7 +2,7 @@ import unittest
 from collections import namedtuple
 from unittest.mock import patch, PropertyMock, Mock, call
 
-import break_on
+import invisipatch
 from foo import Foo
 
 
@@ -85,7 +85,7 @@ class MyTestCase(unittest.TestCase):
         self.assertIsInstance(Foo.my_prop, property)
 
         mock = Mock()
-        with break_on.set_property(Foo, 'my_prop', hook=mock):
+        with invisipatch.set_property(Foo, 'my_prop', hook=mock):
             self.assertIsInstance(Foo.my_prop, property)
             foo = Foo()
             foo.my_prop = 4
@@ -118,7 +118,7 @@ class MyTestCase(unittest.TestCase):
             'attribute is now in the instance dictionary')
         mock = Mock()
 
-        with break_on.set_attribute(Foo, 'my_attr', hook=mock):
+        with invisipatch.set_attribute(Foo, 'my_attr', hook=mock):
             foo = Foo()
             self.assertEqual(original_attr_value, foo.my_attr)
             self.assertNotIn('my_attr', foo.__dict__, 'Mocked attribute is not in instance dictionary either')
@@ -159,7 +159,7 @@ class MyTestCase(unittest.TestCase):
         foo_orig.my_attr = 12
         mock = Mock()
 
-        with break_on.set(Foo, 'my_prop', hook=mock):
+        with invisipatch.setattr(Foo, 'my_prop', hook=mock):
             foo_prop = Foo()
             foo_prop.my_prop = 7
             self.assertEqual(7, foo_prop.my_prop)
@@ -168,7 +168,7 @@ class MyTestCase(unittest.TestCase):
         foo_orig_2.my_prop = 15
         foo_orig_2.my_attr = 16
 
-        with break_on.set(Foo, 'my_attr', hook=mock):
+        with invisipatch.setattr(Foo, 'my_attr', hook=mock):
             foo_attr = Foo()
             foo_attr.my_attr = 8
             self.assertEqual(8, foo_attr.my_attr)
@@ -191,12 +191,12 @@ class MyTestCase(unittest.TestCase):
         ])
 
     def test_default_hook(self):
-        with break_on.set(Foo, 'my_attr') as mock:
+        with invisipatch.setattr(Foo, 'my_attr') as mock:
             foo = Foo()
             foo.my_attr = 53
             mock.assert_called_once_with(foo, 53)
 
-        with break_on.set(Foo, 'my_prop') as mock:
+        with invisipatch.setattr(Foo, 'my_prop') as mock:
             foo = Foo()
             foo.my_prop = 59
             mock.assert_called_once_with(foo, 59)
@@ -204,7 +204,6 @@ class MyTestCase(unittest.TestCase):
     # @unittest.skip("manual")
     def test_manual_default_hook_breakpoint(self):
         # TODO declare this as a manual test
-        with break_on.set(Foo, 'my_attr', hook=break_on.BREAKPOINT):
+        with invisipatch.setattr(Foo, 'my_attr', hook=invisipatch.BREAKPOINT):
             foo = Foo()
             foo.my_attr = 53
-            foo.my_attr = 57
