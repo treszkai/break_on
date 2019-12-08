@@ -3,7 +3,6 @@ from collections import namedtuple
 from unittest.mock import patch, PropertyMock, Mock, call
 
 import break_on
-from break_on import MyPropertyMock
 from foo import Foo
 
 
@@ -13,8 +12,11 @@ class MyTestCase(unittest.TestCase):
         foo = Foo()
         with self.assertRaises(
                 AttributeError,
-                'You can’t set the value of a property with __setattr__()'):
-            foo.__setattr__('my_prop')
+                msg='You can’t set the value of a property with __setattr__()'
+        ):
+            foo.__setattr__('my_prop', "The Flying Circus")
+
+            # TODO this only fails if the property setter is not defined
 
 
     def test_property_mock(self):
@@ -82,9 +84,6 @@ class MyTestCase(unittest.TestCase):
 
         self.assertIsInstance(Foo.my_prop, property)
 
-        # TODO is this affected by the patch?
-        original_foo = Foo()
-
         mock = Mock()
         with break_on.set_property(Foo, 'my_prop', hook=mock):
             self.assertIsInstance(Foo.my_prop, property)
@@ -139,14 +138,14 @@ class MyTestCase(unittest.TestCase):
         nt = NT(3, 4)
         with self.assertRaises(
                 AttributeError,
-                'mock.patch can’t mock a frozen attribute either'
+                msg='mock.patch can’t mock a frozen attribute either'
         ):
             with patch.object(nt, "a"):
                 pass
 
         with self.assertRaises(
                 AttributeError,
-                'mock.patch can’t mock a non-existent attribute of a frozen class'
+                msg='mock.patch can’t mock a non-existent attribute of a frozen class'
         ):
             with patch.object(nt, "x"):
                 pass
@@ -171,21 +170,33 @@ class MyTestCase(unittest.TestCase):
 
         with break_on.set(Foo, 'my_attr', hook=mock):
             foo_attr = Foo()
-            foo_attr.my_attr = 9
-            self.assertEqual(9, foo_attr.my_attr)
+            foo_attr.my_attr = 8
+            self.assertEqual(8, foo_attr.my_attr)
 
         foo_orig_3 = Foo()
         foo_orig_3.my_prop = 19
         foo_orig_3.my_attr = 20
 
-        self.assertEqual(11, foo_orig.my_prop)
-        self.assertEqual(12, foo_orig.my_attr)
-        self.assertEqual(15, foo_orig_2.my_prop)
-        self.assertEqual(16, foo_orig_2.my_attr)
-        self.assertEqual(19, foo_orig_3.my_prop)
-        self.assertEqual(20, foo_orig_3.my_attr)
+        msg = 'Instances created outside the context manager are not affected'
+        self.assertEqual(11, foo_orig.my_prop, msg)
+        self.assertEqual(12, foo_orig.my_attr, msg)
+        self.assertEqual(15, foo_orig_2.my_prop, msg)
+        self.assertEqual(16, foo_orig_2.my_attr, msg)
+        self.assertEqual(19, foo_orig_3.my_prop, msg)
+        self.assertEqual(20, foo_orig_3.my_attr, msg)
 
         mock.assert_has_calls([
             call(foo_prop, 7),
-            call(foo_attr, 9)
+            call(foo_attr, 8)
         ])
+
+    def test_default_hook(self):
+        with break_on.set(Foo, 'my_attr') as mock:
+            foo = Foo()
+            foo.my_attr = 53
+            mock.assert_called_once_with(foo, 53)
+
+        with break_on.set(Foo, 'my_prop') as mock:
+            foo = Foo()
+            foo.my_prop = 59
+            mock.assert_called_once_with(foo, 59)

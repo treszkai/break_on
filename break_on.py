@@ -3,8 +3,8 @@
 # TODO attribute of the instance type or of a parent class
 
 from contextlib import contextmanager
-from typing import Union, Container, Literal, Callable, Tuple, Any
-from unittest.mock import patch
+from typing import Union, Container, Literal, Callable, Tuple, Any, Optional
+from unittest.mock import patch, Mock
 
 GET = object()
 SET = object()
@@ -84,11 +84,29 @@ def is_property(cls: type, name: str):
 
 
 @contextmanager
-def set(cls: type, name: str, hook=breakpoint):
+def set(
+    cls: type,
+    name: str,
+    hook: Optional[Callable[[Any, Any], None]] = None
+):
+    """Context manager for hooking on to the setting of a property or attribute
+
+    :param cls: Class whose property/attribute setter we are hooking on to
+    :param name: Property/attribute name whose setter we are hooking on to
+    :param hook: Hook to call when setting the parameter.
+        Default: Return a Mock instance with the side-effect of
+        calling the built-in breakpoint()
+    :return:
+    """
     # TODO should I care that this set shadows the built-in name set?
+
+    if hook is None:
+        hook = Mock()
+
     if is_property(cls, name):
-        with set_property(cls, name, hook) as mock:
-            yield mock
+        with set_property(cls, name, hook):
+            yield hook
     else:
-        with set_attribute(cls, name, hook) as mock:
-            yield mock
+        with set_attribute(cls, name, hook):
+            # TODO change this to `as mock; yield mock`
+            yield hook
