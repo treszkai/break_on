@@ -94,9 +94,8 @@ def set(
     :param cls: Class whose property/attribute setter we are hooking on to
     :param name: Property/attribute name whose setter we are hooking on to
     :param hook: Hook to call when setting the parameter.
-        Default: Return a Mock instance with the side-effect of
-        calling the built-in breakpoint()
-    :return:
+        Default: a new Mock instance.
+    :return: A runtime context
     """
     # TODO should I care that this set shadows the built-in name set?
 

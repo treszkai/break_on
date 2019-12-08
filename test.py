@@ -200,3 +200,11 @@ class MyTestCase(unittest.TestCase):
             foo = Foo()
             foo.my_prop = 59
             mock.assert_called_once_with(foo, 59)
+
+    # @unittest.skip("manual")
+    def test_default_hook_breakpoint(self):
+        # TODO declare this as a manual test
+        with break_on.set(Foo, 'my_attr', hook=lambda x, y: breakpoint()):
+            foo = Foo()
+            foo.my_attr = 53
+            foo.my_attr = 57
