@@ -81,7 +81,7 @@ class MyTestCase(unittest.TestCase):
             self.assertIsInstance(Foo.my_prop, property)
             foo = Foo()
             foo.my_prop = 4
-            self.assertEqual(foo.my_prop, 4)
+            self.assertEqual(4, foo.my_prop)
 
         mock.assert_called_once_with(foo, 4)
 
@@ -94,6 +94,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_mock_instance_attribute_write(self):
         original_foo = Foo()
+        original_attr_value = original_foo.my_attr
         self.assertIn(
             'my_attr',
             Foo.__dict__,
@@ -107,17 +108,18 @@ class MyTestCase(unittest.TestCase):
             'my_attr',
             original_foo.__dict__,
             'attribute is now in the instance dictionary')
-        original_attr_value = original_foo.my_attr
         mock = Mock()
 
         with break_on.set_attribute(Foo, 'my_attr', hook=mock):
             foo = Foo()
+            self.assertEqual(original_attr_value, foo.my_attr)
+            self.assertNotIn('my_attr', foo.__dict__, 'Mocked attribute is not in instance dictionary either')
+            foo.my_attr = 3
             self.assertIn(
                 'my_attr',
                 foo.__dict__,
-                'Mocked attribute behaves as the original')
-            self.assertEqual(original_attr_value, foo.my_attr)
-            foo.my_attr = 3
+                'Mocked attribute is in instance dictionary after setting value')
+
             self.assertEqual(3, foo.my_attr)
 
         mock.assert_called_once_with(foo, 3)
@@ -138,6 +140,8 @@ class MyTestCase(unittest.TestCase):
         ):
             with patch.object(nt, "x"):
                 pass
+
+    # TODO test that class is not affected after context manager exit
 
     def test_mock_either(self):
         raise NotImplementedError

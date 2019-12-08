@@ -56,4 +56,16 @@ def set_property(cls: type, prop_name: str, hook=breakpoint):
 
 @contextmanager
 def set_attribute(cls: type, prop_name: str, hook=breakpoint):
-    yield None
+    # Mock cls.__setattr__ such that
+    #  - if it's called with prop_name, then it calls the hook first, and then
+    #  - regardless of prop_name, it calls the saved_setattr
+    saved_setattr = cls.__setattr__
+
+    def __setattr__(self, name, value):
+        if name == prop_name:
+            hook(self, value)
+        self.__dict__[name] = value
+
+    with patch.object(cls, '__setattr__', __setattr__):
+        # TODO can we yield anything meaningful here?
+        yield None
