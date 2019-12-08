@@ -77,7 +77,6 @@ class MyTestCase(unittest.TestCase):
 
         with break_on.set_property(Foo, 'my_prop'):
             self.assertIsInstance(Foo.my_prop, property)
-
             foo = Foo()
             foo.my_prop = 4
             self.assertEqual(foo.my_prop, 4)

@@ -19,9 +19,6 @@ class Foo:
 
 def some_func():
     x = Foo()
-
     x.set_my_attr(2)
-
     x.my_attr = 3
-
     x.my_prop = 5
