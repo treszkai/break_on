@@ -8,6 +8,15 @@ from foo import Foo
 
 
 class MyTestCase(unittest.TestCase):
+    def test_property(self):
+        """Demonstrate why we need a distinct set_property and a set_attribute patch"""
+        foo = Foo()
+        with self.assertRaises(
+                AttributeError,
+                'You can’t set the value of a property with __setattr__()'):
+            foo.__setattr__('my_prop')
+
+
     def test_property_mock(self):
         # PropertyMock only works if you set the value of the attribute manually
         #  for each call (or all of them)
@@ -121,6 +130,7 @@ class MyTestCase(unittest.TestCase):
                 'Mocked attribute is in instance dictionary after setting value')
 
             self.assertEqual(3, foo.my_attr)
+            self.assertEqual(3, foo.__dict__['my_attr'])
 
         mock.assert_called_once_with(foo, 3)
 
@@ -142,13 +152,40 @@ class MyTestCase(unittest.TestCase):
                 pass
 
     # TODO test that class is not affected after context manager exit
+    # TODO test that set_attribute works with a custom-implemented __setattr__
 
     def test_mock_either(self):
-        raise NotImplementedError
+        foo_orig = Foo()
+        foo_orig.my_prop = 11
+        foo_orig.my_attr = 12
+        mock = Mock()
 
-        def is_attribute(obj, name):
-            """Return True iff name is an attribute of obj"""
-            return name in obj.__dict__
+        with break_on.set(Foo, 'my_prop', hook=mock):
+            foo_prop = Foo()
+            foo_prop.my_prop = 7
+            self.assertEqual(7, foo_prop.my_prop)
 
-if __name__ == '__main__':
-    unittest.main()
+        foo_orig_2 = Foo()
+        foo_orig_2.my_prop = 15
+        foo_orig_2.my_attr = 16
+
+        with break_on.set(Foo, 'my_attr', hook=mock):
+            foo_attr = Foo()
+            foo_attr.my_attr = 9
+            self.assertEqual(9, foo_attr.my_attr)
+
+        foo_orig_3 = Foo()
+        foo_orig_3.my_prop = 19
+        foo_orig_3.my_attr = 20
+
+        self.assertEqual(11, foo_orig.my_prop)
+        self.assertEqual(12, foo_orig.my_attr)
+        self.assertEqual(15, foo_orig_2.my_prop)
+        self.assertEqual(16, foo_orig_2.my_attr)
+        self.assertEqual(19, foo_orig_3.my_prop)
+        self.assertEqual(20, foo_orig_3.my_attr)
+
+        mock.assert_has_calls([
+            call(foo_prop, 7),
+            call(foo_attr, 9)
+        ])

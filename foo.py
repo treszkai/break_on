@@ -10,11 +10,11 @@ class Foo:
 
     @property
     def my_prop(self):
-        return self.my_attr
+        return self._my_prop
 
     @my_prop.setter
     def my_prop(self, value):
-        self.my_attr = value
+        self._my_prop = value
 
 
 def some_func():

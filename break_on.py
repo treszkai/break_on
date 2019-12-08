@@ -55,17 +55,40 @@ def set_property(cls: type, prop_name: str, hook=breakpoint):
 
 
 @contextmanager
-def set_attribute(cls: type, prop_name: str, hook=breakpoint):
+def set_attribute(cls: type, attr_name: str, hook=breakpoint):
     # Mock cls.__setattr__ such that
     #  - if it's called with prop_name, then it calls the hook first, and then
     #  - regardless of prop_name, it calls the saved_setattr
     saved_setattr = cls.__setattr__
 
     def __setattr__(self, name, value):
-        if name == prop_name:
+        if name == attr_name:
             hook(self, value)
-        self.__dict__[name] = value
+        # Unlike `self.__dict__[name] = value`, the following works
+        #  whether self."name" is an attribute or not
+        saved_setattr(self, name, value)
 
     with patch.object(cls, '__setattr__', __setattr__):
         # TODO can we yield anything meaningful here?
         yield None
+
+
+def is_property(cls: type, name: str):
+    """True iff name is a property of class"""
+    # TODO this probably fails for an inherited property
+    try:
+        return isinstance(cls.__dict__[name], property)
+    except KeyError:
+        # we could call is_property recursively, returning False if cls is type
+        return False
+
+
+@contextmanager
+def set(cls: type, name: str, hook=breakpoint):
+    # TODO should I care that this set shadows the built-in name set?
+    if is_property(cls, name):
+        with set_property(cls, name, hook) as mock:
+            yield mock
+    else:
+        with set_attribute(cls, name, hook) as mock:
+            yield mock
