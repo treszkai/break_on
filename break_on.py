@@ -6,6 +6,8 @@ from contextlib import contextmanager
 from typing import Union, Container, Literal, Callable, Tuple, Any, Optional
 from unittest.mock import patch, Mock
 
+BREAKPOINT = object()
+
 GET = object()
 SET = object()
 DEL = object()
@@ -48,14 +50,14 @@ class MyPropertyMock(property):
 
 
 @contextmanager
-def set_property(cls: type, prop_name: str, hook=breakpoint):
+def set_property(cls: type, prop_name: str, hook):
     mocked_property = MyPropertyMock(cls, prop_name, hook_set=hook)
     with patch.object(cls, prop_name, new=mocked_property):
         yield mocked_property
 
 
 @contextmanager
-def set_attribute(cls: type, attr_name: str, hook=breakpoint):
+def set_attribute(cls: type, attr_name: str, hook):
     # Mock cls.__setattr__ such that
     #  - if it's called with prop_name, then it calls the hook first, and then
     #  - regardless of prop_name, it calls the saved_setattr
@@ -93,7 +95,8 @@ def set(
 
     :param cls: Class whose property/attribute setter we are hooking on to
     :param name: Property/attribute name whose setter we are hooking on to
-    :param hook: Hook to call when setting the parameter.
+    :param hook: Hook to call when setting the parameter, with arguments
+        (instance, value), when the given attribute of instance is set to value.
         Default: a new Mock instance.
     :return: A runtime context
     """
@@ -101,6 +104,8 @@ def set(
 
     if hook is None:
         hook = Mock()
+    elif hook is BREAKPOINT:
+        hook = lambda _i, _v: breakpoint()
 
     if is_property(cls, name):
         with set_property(cls, name, hook):
