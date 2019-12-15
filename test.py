@@ -2,6 +2,7 @@ import unittest
 from collections import namedtuple
 from unittest.mock import patch, PropertyMock, Mock, call
 
+import break_on
 import invisipatch
 from foo import Foo
 
@@ -204,6 +205,6 @@ class MyTestCase(unittest.TestCase):
     # @unittest.skip("manual")
     def test_manual_default_hook_breakpoint(self):
         # TODO declare this as a manual test
-        with invisipatch.setattr(Foo, 'my_attr', hook=invisipatch.BREAKPOINT):
+        with break_on.set(Foo, 'my_attr'):
             foo = Foo()
             foo.my_attr = 53

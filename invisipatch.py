@@ -59,7 +59,7 @@ def set_property(cls: type, prop_name: str, hook):
 @contextmanager
 def set_attribute(cls: type, attr_name: str, hook):
     # Mock cls.__setattr__ such that
-    #  - if it's called with prop_name, then it calls the hook first, and then
+    #  - if it's called with prop_name, then it calls the action first, and then
     #  - regardless of prop_name, it calls the saved_setattr
     saved_setattr = cls.__setattr__
 
